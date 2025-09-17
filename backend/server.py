@@ -1,14 +1,16 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database import SessionLocal, engine, Base
+from sqlalchemy import create_engine
+from database import SessionLocal, engine, Base, ComplaintStatus
+from models import Complaint, User, create_tables
 import contextlib
 import uvicorn
 import joblib
 from sentence_transformers import SentenceTransformer
 import datetime
 import uuid
-import sys
+import os
 
 # Create the FastAPI app instance
 app = FastAPI()
@@ -39,196 +41,122 @@ def on_startup():
 
 # Load machine learning model and label encoder
 try:
-    # Corrected file paths
     loaded_best_model = joblib.load("complaint_agency_bert_classifier.joblib")
     loaded_le = joblib.load("label_encoder_bert.joblib")
     embedder = SentenceTransformer('all-MiniLM-L6-v2')
     print("Model, label encoder, and embedder loaded successfully.")
 except FileNotFoundError:
-    print("Error: Model files not found. Ensure they are in the root of the 'backend' directory.")
+    print("Error: Model files not found. Ensure they are in the 'backend' directory.")
     sys.exit(1)
 
-@app.route("/")
-def home():
-    return "Civic Complaint System Backend"
+# API Routes
+# =========================================================================
 
-# Citizen Signup
-@app.route("/api/signup", methods=["POST"])
-def signup():
-    db = SessionLocal()
-    try:
-        data = request.get_json()
-        name = data.get("name")
-        email = data.get("email")
-        password = data.get("password")
+# Helper function to get a user by email
+def get_user_by_email(db: Session, email: str):
+    return db.query(User).filter(User.email == email).first()
 
-        if db.query(User).filter(User.email == email).first():
-            return jsonify({"error": "User with this email already exists."}), 409
+# Helper function to get a complaint by ID
+def get_complaint_by_id(db: Session, complaint_id: int):
+    return db.query(Complaint).filter(Complaint.id == complaint_id).first()
 
-        new_user = User(name=name, email=email, password=password, role="citizen")
-        db.add(new_user)
-        db.commit()
-        return jsonify({"message": "User created successfully", "user_id": new_user.id}), 201
-    finally:
-        db.close()
+# User login and authentication
+@app.post("/login")
+def login(request: Request, db: Session = Depends(get_db)):
+    # Assuming a simple JSON body with email and password
+    user_data = request.json()
+    email = user_data.get("email")
+    password = user_data.get("password")
+    
+    user = get_user_by_email(db, email)
+    if not user or user.password != password: # Warning: This is not secure! Use a password hashing library.
+        raise HTTPException(status_code=400, detail="Invalid email or password")
+    
+    return {"message": "Login successful", "user": user.email, "user_id": user.id}
 
-# Citizen/Admin Login
-@app.route("/api/login", methods=["POST"])
-def login():
-    db = SessionLocal()
-    try:
-        data = request.get_json()
-        email = data.get("email")
-        password = data.get("password")
-        username = data.get("username")
-
-        user = None
-        if email:
-            user = db.query(User).filter(User.email == email, User.password == password).first()
-        elif username:
-            user = db.query(User).filter(User.name == username, User.password == password).first()
-
-        if user:
-            return jsonify({
-                "message": "Login successful",
-                "user_id": user.id,
-                "role": user.role,
-                "name": user.name,
-                "department": user.department
-            }), 200
-        return jsonify({"error": "Invalid credentials"}), 401
-    finally:
-        db.close()
-
-# Submit new complaint with ML classification
-@app.route("/api/complaints", methods=["POST"])
-def create_complaint():
-    db = SessionLocal()
-    try:
-        data = request.get_json()
-        title = data.get("title")
-        description = data.get("description")
-        location = data.get("location")
-        user_id = data.get("user_id")
+# User signup
+@app.post("/signup")
+def signup(request: Request, db: Session = Depends(get_db)):
+    user_data = request.json()
+    name = user_data.get("name")
+    email = user_data.get("email")
+    password = user_data.get("password")
+    
+    if get_user_by_email(db, email):
+        raise HTTPException(status_code=400, detail="Email already registered")
         
-        # ML prediction
-        with contextlib.redirect_stdout(None):
-            embedding = embedder.encode([description])
-            pred = loaded_best_model.predict(embedding)
-        department = loaded_le.inverse_transform(pred)[0]
+    new_user = User(name=name, email=email, password=password) # Warning: Not hashed!
+    db.add(new_user)
+    db.commit()
+    return {"message": "User created successfully"}
 
-        # Generate a unique ID for the complaint
-        complaint_id = str(uuid.uuid4())
+# Submit a new complaint
+@app.post("/complaints")
+def create_complaint(request: Request, db: Session = Depends(get_db)):
+    complaint_data = request.json()
+    title = complaint_data.get("title")
+    description = complaint_data.get("description")
+    location = complaint_data.get("location")
+    user_id = complaint_data.get("user_id")
 
-        new_complaint = Complaint(
-            id=complaint_id,
-            title=title,
-            description=description,
-            location=location,
-            department=department,
-            citizen_id=user_id,
-            status="Registered"
-        )
-        db.add(new_complaint)
-        db.commit()
-        return jsonify({"message": "Complaint submitted successfully", "complaint": {
-            "id": new_complaint.id,
-            "title": new_complaint.title,
-            "description": new_complaint.description,
-            "location": new_complaint.location,
-            "department": new_complaint.department,
-            "status": new_complaint.status,
-            "registered": new_complaint.registered.isoformat(),
-            "user_id": new_complaint.citizen_id
-        }}), 201
-    except Exception as e:
-        db.rollback()
-        print(f"Error creating complaint: {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
-        db.close()
+    # Predict the department using the ML model
+    text_input = f"{title}. {description}"
+    embeddings = embedder.encode([text_input])
+    prediction = loaded_best_model.predict(embeddings)
+    predicted_department = loaded_le.inverse_transform(prediction)[0]
 
-# Get complaints for a specific user
-@app.route("/api/complaints/user/<int:user_id>", methods=["GET"])
-def get_user_complaints(user_id):
-    db = SessionLocal()
-    try:
-        complaints = db.query(Complaint).filter(Complaint.citizen_id == user_id).all()
-        complaints_list = []
-        for c in complaints:
-            complaints_list.append({
-                "id": c.id,
-                "title": c.title,
-                "description": c.description,
-                "location": c.location,
-                "department": c.department,
-                "status": c.status,
-                "registered": c.registered.isoformat(),
-                "resolved": c.resolved.isoformat() if c.resolved else None
-            })
-        return jsonify(complaints_list), 200
-    finally:
-        db.close()
+    new_complaint = Complaint(
+        title=title,
+        description=description,
+        location=location,
+        user_id=user_id,
+        department=predicted_department,
+        status=ComplaintStatus.registered
+    )
+    db.add(new_complaint)
+    db.commit()
+    db.refresh(new_complaint)
+    
+    return {"message": "Complaint submitted and classified.", "complaint": new_complaint}
 
-# Get all complaints (for admin)
-@app.route("/api/complaints", methods=["GET"])
-def get_all_complaints():
-    db = SessionLocal()
-    try:
-        complaints = db.query(Complaint).all()
-        complaints_list = []
-        for c in complaints:
-            citizen_email = db.query(User.email).filter(User.id == c.citizen_id).scalar()
-            complaints_list.append({
-                "id": c.id,
-                "title": c.title,
-                "description": c.description,
-                "location": c.location,
-                "department": c.department,
-                "status": c.status,
-                "registered": c.registered.isoformat(),
-                "resolved": c.resolved.isoformat() if c.resolved else None,
-                "citizen_email": citizen_email
-            })
-        return jsonify(complaints_list), 200
-    finally:
-        db.close()
+# Get a user's complaints
+@app.get("/complaints/user/{user_id}")
+def get_user_complaints(user_id: int, db: Session = Depends(get_db)):
+    complaints = db.query(Complaint).filter(Complaint.user_id == user_id).all()
+    return complaints
+
+# Get all complaints
+@app.get("/complaints")
+def get_all_complaints(db: Session = Depends(get_db)):
+    complaints = db.query(Complaint).all()
+    return complaints
 
 # Update complaint status
-@app.route("/api/complaints/<string:complaint_id>", methods=["PUT"])
-def update_complaint(complaint_id):
-    db = SessionLocal()
-    try:
-        complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
-        if not complaint:
-            return jsonify({"error": "Complaint not found"}), 404
-            
-        data = request.get_json()
-        new_status = data.get("status")
+@app.put("/complaints/{complaint_id}")
+def update_complaint_status(complaint_id: int, request: Request, db: Session = Depends(get_db)):
+    complaint = get_complaint_by_id(db, complaint_id)
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    new_status = request.json().get("status")
+    if new_status not in [e.value for e in ComplaintStatus]:
+        raise HTTPException(status_code=400, detail="Invalid status")
         
-        complaint.status = new_status
-        if new_status == "Resolved":
-            complaint.resolved = datetime.datetime.now()
-        
-        db.commit()
-        return jsonify({"message": "Complaint updated successfully"}), 200
-    finally:
-        db.close()
+    complaint.status = new_status
+    if new_status == ComplaintStatus.resolved:
+        complaint.resolved_date = datetime.datetime.utcnow()
+    
+    db.commit()
+    db.refresh(complaint)
+    return {"message": "Complaint status updated", "complaint": complaint}
 
-# Delete complaint
-@app.route("/api/complaints/<string:complaint_id>", methods=["DELETE"])
-def delete_complaint(complaint_id):
-    db = SessionLocal()
-    try:
-        complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
-        if not complaint:
-            return jsonify({"error": "Complaint not found"}), 404
-        
-        db.delete(complaint)
-        db.commit()
-        return jsonify({"message": "Complaint deleted successfully"}), 200
-    finally:
-        db.close()
-
-if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+# Delete a complaint
+@app.delete("/complaints/{complaint_id}")
+def delete_complaint(complaint_id: int, db: Session = Depends(get_db)):
+    complaint = get_complaint_by_id(db, complaint_id)
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    
+    db.delete(complaint)
+    db.commit()
+    return {"message": "Complaint deleted successfully"}
