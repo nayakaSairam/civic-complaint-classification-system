@@ -1,28 +1,51 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.orm import Session
+from .database import SessionLocal, engine, Base
+import contextlib
+import uvicorn
 import joblib
 from sentence_transformers import SentenceTransformer
-import contextlib
-from models import SessionLocal, Complaint, User, create_tables
 import datetime
 import uuid
 import sys
 
-# Create database tables
-create_tables()
+# Create the FastAPI app instance
+app = FastAPI()
 
-# Initialize Flask app
-app = Flask(__name__)
-CORS(app)
+# Add CORS middleware to allow cross-origin requests from your frontend
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Allows all origins
+    allow_credentials=True,
+    allow_methods=["*"],  # Allows all methods
+    allow_headers=["*"],  # Allows all headers
+)
+
+# Use a context manager to get the database session
+@contextlib.contextmanager
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+# Create database tables when the app starts up
+@app.on_event("startup")
+def on_startup():
+    Base.metadata.create_all(bind=engine)
+    print("Database tables created!")
 
 # Load machine learning model and label encoder
 try:
-    loaded_best_model = joblib.load("backend/complaint_agency_bert_classifier.joblib")
-    loaded_le = joblib.load("backend/label_encoder_bert.joblib")
+    # Corrected file paths
+    loaded_best_model = joblib.load("complaint_agency_bert_classifier.joblib")
+    loaded_le = joblib.load("label_encoder_bert.joblib")
     embedder = SentenceTransformer('all-MiniLM-L6-v2')
     print("Model, label encoder, and embedder loaded successfully.")
 except FileNotFoundError:
-    print("Error: Model files not found. Ensure they are in the 'backend' directory.")
+    print("Error: Model files not found. Ensure they are in the root of the 'backend' directory.")
     sys.exit(1)
 
 @app.route("/")
