@@ -7,4 +7,4 @@ python-jose[cryptography]
 python-dotenv
 scikit-learn
 joblib
-psycopg2-binar
+psycopg2-binary
