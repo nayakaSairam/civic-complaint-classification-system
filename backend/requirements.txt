@@ -1,13 +1,10 @@
-# Flask==3.0.3
-# Flask-Cors==4.0.1
-# SQLAlchemy==2.0.31
-# Sentence-Transformers==2.7.0
-# joblib==1.4.2
-# scikit-learn==1.5.0
 fastapi
 uvicorn
+sqlalchemy
 pydantic
 passlib[bcrypt]
 python-jose[cryptography]
 python-dotenv
-psycopg2-binary # This is the new line
+scikit-learn
+joblib
+psycopg2-binar
