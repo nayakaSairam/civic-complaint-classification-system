@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Contact</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+    <script src="geo.js"></script> 
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-row">
+        <a href="index.html" class="brand">Civic Complaint System</a>
+        <nav class="nav">
+            <a href="index.html">Home</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container form-page">
+    <div class="card form-card narrow">
+        <h2>Contact / Feedback</h2>
+        <form id="contactForm">
+            <label>
+                Email
+                <input name="email" type="email" required />
+            </label>
+            <label>
+                Message
+                <textarea name="message" rows="5" required></textarea>
+            </label>
+            <div class="form-row">
+                <button type="submit" class="btn btn-primary">Send</button>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>

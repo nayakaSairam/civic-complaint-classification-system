@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Submit New Complaint</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+    <script src="geo.js"></script> 
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-row">
+        <a href="index.html" class="brand">Civic Complaint System</a>
+        <nav class="nav">
+            <a href="citizen-dashboard.html">My complaints</a>
+            <a href="index.html">Logout</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container form-page">
+    <div class="card form-card wide">
+        <h2>New Complaint</h2>
+        <form id="complaintForm">
+            <label>
+                Title
+                <input id="complaint-title" type="text" required placeholder="Short title" />
+            </label>
+            <label>
+                Description
+                <textarea id="complaint-desc" required placeholder="Describe the issue"></textarea>
+            </label>
+            <label>
+                Location
+                <input id="complaint-location" type="text" required placeholder="Complaint location" />
+            </label>
+            <div class="form-row">
+                <button type="submit" class="btn btn-primary">Submit Complaint</button>
+                <a href="citizen-dashboard.html" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+
+        <div id="classificationResult" class="classification-result hidden">
+            <h4>Model classification</h4>
+            <p><strong>Predicted department:</strong> <span id="predDept"></span></p>
+        </div>
+    </div>
+</main>
+</body>
+</html>

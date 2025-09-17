@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Civic Complaint Classification — Home</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+    <script src="geo.js"></script> 
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a href="index.html" class="brand">Civic Complaint System</a>
+      <nav class="nav">
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <div class="cta">
+          <a class="btn" href="citizen-login.html">Citizen Login</a>
+          <a class="btn btn-outline" href="admin-login.html">Admin</a>
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container hero">
+    <div class="hero-left">
+      <h1>Report civic issues • route them to the right agency</h1>
+      <p class="lead">
+        Citizens can quickly register complaints. An ML model will classify each complaint to the correct department.
+        Admins can view, filter and update complaint statuses.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="citizen-signup.html">File a Complaint</a>
+        <a class="btn" href="about.html">Learn More</a>
+      </div>
+    </div>
+
+    <aside class="hero-right">
+      <div class="card quick-stats">
+        <h3>Quick Actions</h3>
+        <ul>
+          <li><a href="citizen-login.html">Track my complaints</a></li>
+          <li><a href="new-complaint.html">Submit new complaint</a></li>
+          <li><a href="admin-login.html">Admin dashboard</a></li>
+        </ul>
+      </div>
+    </aside>
+  </main>
+
+  <section class="container features">
+    <div class="feature">
+      <h3>Citizen-focused</h3>
+      <p>Easy complaint submission, status tracking, and history.</p>
+    </div>
+    <div class="feature">
+      <h3>Admin tools</h3>
+      <p>Table view, filters, status updates, and complaint details.</p>
+    </div>
+    <div class="feature">
+      <h3>ML classification</h3>
+      <p>Integrate pre-trained model to auto-assign departments.</p>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>© <span id="year"></span> Civic Complaint System — Frontend prototype</p>
+    </div>
+  </footer>
+</body>
+</html>

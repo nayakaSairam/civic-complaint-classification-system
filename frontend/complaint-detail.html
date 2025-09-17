@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <script src="app.js" defer></script>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Complaint Detail</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="geo.js"></script> 
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-row">
+      <a href="index.html" class="brand">Civic Complaint System</a>
+      <nav class="nav">
+        <a href="citizen-dashboard.html">Back to list</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container detail-page">
+    <div class="card detail-card">
+      <div class="detail-header">
+        <h2 id="detailTitle">Pothole near market</h2>
+        <div class="meta">
+          <span id="detailId">#C-1001</span> • <span id="detailDate">Registered: 2025-09-10</span>
+        </div>
+      </div>
+
+      <div class="detail-body">
+        <div class="detail-left">
+          <h4>Description</h4>
+          <p id="detailDesc">[Detailed description goes here.]</p>
+
+          <h4>Location</h4>
+          <p id="detailLocation">Main St, near City Market</p>
+
+          <h4>Department</h4>
+          <p id="detailDept">Roads Dept</p>
+
+          <h4>Status</h4>
+          <p id="detailStatus"><span class="status status-registered">Registered</span></p>
+        </div>
+
+        <aside class="detail-right">
+          <h4>Citizen</h4>
+          <p id="detailCitizen">Citizen (anonymized)</p>
+
+          <h4>History</h4>
+          <ul id="detailHistory">
+            <li>2025-09-10 — Registered</li>
+          </ul>
+
+          <a class="btn btn-outline" href="citizen-dashboard.html">Back</a>
+        </aside>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

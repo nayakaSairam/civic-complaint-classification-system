@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Citizen Signup</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+    <script src="geo.js"></script> 
+</head>
+<body>
+<header class="site-header">
+    <div class="container header-row">
+        <a href="index.html" class="brand">Civic Complaint System</a>
+        <nav class="nav">
+            <a href="index.html">Home</a>
+            <a href="citizen-login.html">Login</a>
+        </nav>
+    </div>
+</header>
+
+<main class="container form-page">
+    <div class="card form-card">
+        <h2>Create Citizen Account</h2>
+        <form id="signupForm">
+            <label>
+                Name
+                <input id="signup-name" type="text" required placeholder="Your Name" />
+            </label>
+            <label>
+                Email
+                <input id="signup-email" type="email" required placeholder="you@example.com" />
+            </label>
+            <label>
+                Password
+                <input id="signup-password" type="password" required />
+            </label>
+            <div class="form-row">
+                <button type="submit" class="btn btn-primary">Create Account</button>
+                <a href="citizen-login.html" class="btn btn-outline">Back to Login</a>
+            </div>
+        </form>
+    </div>
+</main>
+</body>
+</html>
